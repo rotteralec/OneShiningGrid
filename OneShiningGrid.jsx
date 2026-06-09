@@ -62,6 +62,17 @@ const normName = (s) =>
 
 // ----- COMPONENT ----------------------------------------------------------
 
+// Per-day, per-mode persistence: a refresh keeps your picks and you can't retry.
+// It's localStorage, so it's per-browser — a new device or incognito starts fresh.
+const GAME_NS = "osg:v1";
+function loadGame(key) {
+  try { const s = window.localStorage.getItem(key); return s ? JSON.parse(s) : null; }
+  catch { return null; }
+}
+function saveGame(key, data) {
+  try { window.localStorage.setItem(key, JSON.stringify(data)); } catch { /* ignore */ }
+}
+
 export default function OneShiningGrid() {
   // Recomputed every render — cheap, and lets the displayed date label roll
   // over if someone keeps the tab open past midnight. The puzzle itself is
@@ -110,6 +121,8 @@ export default function OneShiningGrid() {
   const correctCount = cells.filter(c => c && c.correct).length;
   const totalRarity = cells.reduce((s, c) => s + (c && c.correct ? c.rarity : 0), 0);
   const gameOver = guessesLeft <= 0 || cells.every(c => c);
+  // localStorage key for this board (null in ?test or before data loads → no persistence).
+  const gameKey = !isTest && grid ? `${GAME_NS}:${grid.day}:${mode}` : null;
 
   useEffect(() => {
     if (activeIdx !== null) {
@@ -118,13 +131,26 @@ export default function OneShiningGrid() {
     }
   }, [activeIdx]);
 
-  // Switching difficulty OR test-puzzle starts a fresh board.
+  // On mode/puzzle/day change: restore this board from localStorage if it was
+  // already played (refresh keeps picks, no retry); otherwise start fresh.
+  // ?test stays freely replayable because gameKey is null there.
   useEffect(() => {
-    setCells(Array(9).fill(null));
-    setGuessesLeft(9);
     setActiveIdx(null);
     setShowShare(false);
-  }, [mode, puzzleIdx]);
+    const saved = gameKey ? loadGame(gameKey) : null;
+    if (saved && Array.isArray(saved.cells) && saved.cells.length === 9) {
+      setCells(saved.cells);
+      setGuessesLeft(typeof saved.guessesLeft === "number" ? saved.guessesLeft : 9);
+    } else {
+      setCells(Array(9).fill(null));
+      setGuessesLeft(9);
+    }
+  }, [mode, puzzleIdx, gameKey]);
+
+  // Persist the board on every change (daily only; ?test isn't saved).
+  useEffect(() => {
+    if (gameKey) saveGame(gameKey, { cells, guessesLeft });
+  }, [cells, guessesLeft, gameKey]);
 
   function submit(pick) {
     setCells(prev => {
@@ -303,7 +329,7 @@ export default function OneShiningGrid() {
         )}
 
         {/* TOP BAR */}
-        <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex flex-col items-center gap-2 mb-3 sm:flex-row sm:justify-between">
           <div className="inline-flex items-center gap-2 bg-amber-100/80 border-2 border-slate-900 rounded px-3 py-2 shadow-[3px_3px_0_#0f172a]">
             <span className="text-[11px] tracking-[0.18em] text-slate-600 font-bold">GUESSES</span>
             <span className="flex gap-1">
@@ -315,11 +341,11 @@ export default function OneShiningGrid() {
           </div>
           <div className="flex gap-2">
             <button onClick={() => setShowHow(true)}
-              className="px-3 py-2 text-sm tracking-widest font-bold bg-transparent border-2 border-slate-900 rounded shadow-[3px_3px_0_#0f172a] hover:-translate-x-px hover:-translate-y-px transition">
+              className="px-3 py-2 text-sm tracking-widest font-bold whitespace-nowrap bg-transparent border-2 border-slate-900 rounded shadow-[3px_3px_0_#0f172a] hover:-translate-x-px hover:-translate-y-px transition">
               HOW TO PLAY
             </button>
             <button onClick={() => setShowShare(true)} disabled={!gameOver}
-              className="px-3 py-2 text-sm tracking-widest font-bold bg-slate-900 text-amber-50 rounded border-2 border-slate-900 shadow-[3px_3px_0_#92400e] hover:-translate-x-px hover:-translate-y-px transition disabled:opacity-40 disabled:cursor-not-allowed">
+              className="px-3 py-2 text-sm tracking-widest font-bold whitespace-nowrap bg-slate-900 text-amber-50 rounded border-2 border-slate-900 shadow-[3px_3px_0_#92400e] hover:-translate-x-px hover:-translate-y-px transition disabled:opacity-40 disabled:cursor-not-allowed">
               SHARE
             </button>
           </div>
@@ -613,11 +639,6 @@ function RowGroup({ crit, ri, cols, cells, onPick }) {
                 </div>
                 <div className="font-serif font-bold text-xs sm:text-sm leading-tight">{c.name}</div>
                 <div className="text-[10px] tracking-widest text-slate-600 mt-1 uppercase">{c.team}</div>
-                {c.correct && (
-                  <div className="absolute bottom-1 right-2 text-[10px] tracking-wider text-amber-800 font-bold">
-                    {c.rarity}% picked
-                  </div>
-                )}
               </div>
             ) : (
               <span className="text-3xl font-light text-slate-400">+</span>

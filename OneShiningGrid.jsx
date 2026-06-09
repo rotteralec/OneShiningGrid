@@ -236,7 +236,7 @@ export default function OneShiningGrid() {
     <div className="min-h-screen w-full bg-amber-50 text-slate-900 font-sans relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-100/40 via-transparent to-amber-200/40" />
 
-      <div className="relative max-w-2xl mx-auto px-5 py-8 pb-24">
+      <div className="relative max-w-2xl mx-auto px-3 sm:px-5 py-8 pb-24">
 
         {/* MASTHEAD */}
         <header className="text-center border-y-4 border-double border-slate-900 py-4 mb-6">
@@ -313,11 +313,11 @@ export default function OneShiningGrid() {
         </div>
 
         {/* GRID */}
-        <div className="bg-amber-100/60 border-2 border-slate-900 rounded-md p-3 shadow-[6px_6px_0_#0f172a] relative">
+        <div className="bg-amber-100/60 border-2 border-slate-900 rounded-md p-2 sm:p-3 shadow-[6px_6px_0_#0f172a] relative">
           <div className="absolute -left-0.5 -right-0.5 -top-0.5 h-2 rounded-t-md"
             style={{ backgroundImage: "repeating-linear-gradient(90deg,#b45309 0 18px,#7c2d12 18px 20px)" }} />
           <div className="grid gap-1.5 mt-1"
-            style={{ gridTemplateColumns: "84px 1fr 1fr 1fr", gridTemplateRows: "84px 1fr 1fr 1fr" }}>
+            style={{ gridTemplateColumns: "84px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)", gridTemplateRows: "84px 1fr 1fr 1fr" }}>
             <div className="flex items-center justify-center text-xs italic font-serif text-slate-500 text-center">
               row<br/>×<br/>col
             </div>
@@ -589,16 +589,16 @@ function RowGroup({ crit, ri, cols, cells, onPick }) {
             key={idx}
             disabled={filled}
             onClick={() => !filled && onPick(idx)}
-            className={`relative min-h-[90px] rounded border-2 border-slate-900 p-2 flex items-center justify-center text-center transition
+            className={`relative min-w-0 h-[92px] overflow-hidden rounded border-2 border-slate-900 p-1.5 sm:p-2 flex items-center justify-center text-center transition
               ${filled
                 ? (c.correct ? "bg-green-200" : "bg-rose-100")
                 : "bg-amber-200/70 hover:bg-amber-200 hover:-translate-y-px cursor-pointer"}`}>
             {filled ? (
-              <div>
+              <div className="min-w-0 w-full break-words">
                 <div className={`absolute top-1 left-2 text-[10px] tracking-widest font-bold ${c.correct ? "text-green-800" : "text-rose-800"}`}>
                   {c.correct ? "✓ MATCH" : "✗ MISS"}
                 </div>
-                <div className="font-serif font-bold text-sm leading-tight">{c.name}</div>
+                <div className="font-serif font-bold text-xs sm:text-sm leading-tight">{c.name}</div>
                 <div className="text-[10px] tracking-widest text-slate-600 mt-1 uppercase">{c.team}</div>
                 {c.correct && (
                   <div className="absolute bottom-1 right-2 text-[10px] tracking-wider text-amber-800 font-bold">

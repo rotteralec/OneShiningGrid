@@ -1,0 +1,41 @@
+# One Shining Grid — .gitignore
+# Deploy model = Path A (generate-ahead static): the daily grids are generated
+# LOCALLY from the stats CSVs and committed under public/. The big stat INPUTS
+# therefore never need to live in the repo or in CI.
+
+# --- dependencies / build output ---
+node_modules/
+dist/
+
+# --- python ---
+__pycache__/
+*.pyc
+
+# --- OS / editor / env ---
+.DS_Store
+.env
+.env.local
+.env.*.local
+
+# --- raw stat INPUTS (generated from locally; not needed in repo or CI) ---
+cbb_player_seasons_master.csv
+RawCBBTeamData/
+cbb_conferences_1999-2026/
+nba_draft_2000-2025/
+*_teams_consolidated.csv
+*_players_consolidated.csv
+player_data.json
+ncaa_colors.rda
+
+# --- backups / old / Apple Numbers source ---
+*.bak
+*.numbers
+index_standalone_old.html
+
+# --- local-only build state (Path A regenerates the horizon fresh; not an artifact) ---
+grid_history.json
+
+# --- generated dev/QA previews (re-create via the build_*.py scripts) ---
+pennant_preview.html
+school_color_preview.html
+conference_color_preview.html

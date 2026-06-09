@@ -17,13 +17,14 @@ __pycache__/
 .env.local
 .env.*.local
 
-# --- raw stat INPUTS (generated from locally; not needed in repo or CI) ---
-cbb_player_seasons_master.csv
+# --- data INPUTS: ignore ALL .csv (re-sourceable) + the raw data folders.
+#     The hand-curated maps the build needs are whitelisted at the bottom. ---
+*.csv
 RawCBBTeamData/
 cbb_conferences_1999-2026/
 nba_draft_2000-2025/
-*_teams_consolidated.csv
-*_players_consolidated.csv
+cbb_awards/
+cbb_conf_poy/
 player_data.json
 ncaa_colors.rda
 

@@ -40,6 +40,13 @@ const TYPE_ICONS = {
       <path d="M12 3.5l2.5 5 5.5.8-4 3.9.95 5.5L12 16.9l-4.9 2.6.95-5.5-4-3.9 5.5-.8L12 3.5z" />
     </svg>
   ),
+  award: (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 4h10v4a5 5 0 0 1-10 0V4z" />
+      <path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3" />
+      <path d="M12 13v4M9.5 21h5M10 21l.5-2h3l.5 2" />
+    </svg>
+  ),
 };
 function iconFor(crit) {
   if (crit.type === "school") return null;
@@ -171,11 +178,17 @@ export default function OneShiningGrid() {
   }, [query, searchIndex]);
 
   // Each player may fill only ONE cell per board (right or wrong) — collect the
-  // slugs already placed so the picker can disable them.
+  // slugs already placed so the picker can hide them.
   const usedSlugs = useMemo(
     () => new Set(cells.filter(Boolean).map(c => c.slug)),
     [cells]
   );
+  // Players already on the board sink to the bottom of the picker (shown greyed
+  // and disabled), rather than being removed — available players stay on top.
+  const orderedPlayers = [
+    ...filteredPlayers.filter(p => !usedSlugs.has(p.slug)),
+    ...filteredPlayers.filter(p =>  usedSlugs.has(p.slug)),
+  ];
 
   function shareString() {
     let g = "";
@@ -357,12 +370,12 @@ export default function OneShiningGrid() {
             className="w-full px-3 py-2 border-2 border-slate-900 rounded bg-amber-50 text-base focus:outline-none focus:ring-2 focus:ring-amber-600"
           />
           <div className="max-h-64 overflow-auto mt-3">
-            {filteredPlayers.length === 0 ? (
+            {orderedPlayers.length === 0 ? (
               <div className="p-4 text-center text-slate-500 italic text-sm">
                 No players found.
               </div>
-            ) : filteredPlayers.map(p => {
-              const used = usedSlugs.has(p.slug);   // already placed on the board
+            ) : orderedPlayers.map(p => {
+              const used = usedSlugs.has(p.slug);   // already on the board → bottom, greyed
               return (
                 <button
                   key={p.slug}

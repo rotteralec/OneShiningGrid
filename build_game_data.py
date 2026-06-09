@@ -236,11 +236,27 @@ DRAFT_MIN_PER_CELL = {"draft_pick": 3, "draft_top5": 2, "draft_lotto": 3, "draft
 # Draft tiers allowed in EASY (2nd round stays out — too obscure for easy).
 EASY_DRAFT_IDS = {"draft_pick", "draft_top5", "draft_lotto", "draft_1st"}
 # Column selection: every grid is 2 stats + a 3rd "variety" slot — usually another
-# stat, sometimes a draft tier, occasionally position/Senior. So at most one
-# non-stat column, and (since only slot 3 can be draft) never two draft columns.
-DRAFT_SLOT_PROB  = 0.35   # chance the 3rd column is a draft tier (when one qualifies)
+# stat, sometimes a draft/award tier, occasionally position/Senior. So at most
+# one non-stat column (slot 3); never two draft or two award columns.
+DRAFT_SLOT_PROB  = 0.25   # chance the 3rd column is a draft tier (when one qualifies)
+AWARD_SLOT_PROB  = 0.22   # chance the 3rd column is an award tier (when one qualifies)
 FILLER_SLOT_PROB = 0.12   # chance the 3rd column is position/Senior (when one qualifies)
 TOP5_WEIGHT      = 0.25   # Top 5's pick-weight vs 1.0 for other draft tiers (keeps it rare)
+WOODEN_WEIGHT    = 0.25   # Wooden's pick-weight vs 1.0 for other award tiers (keeps it rare)
+
+# Awards (membership-precomputed from cbb_awards/, like draft). Consensus
+# All-American is the workhorse (~255 players); Wooden is ultra-rare/marquee.
+AWARDS_AA  = ROOT / "cbb_awards" / "consensus_all_americans.csv"   # Season,Team,Player,School
+AWARDS_POY = ROOT / "cbb_awards" / "poy_winners.csv"               # Award,Season,Player,…,slug(last col)
+AWARD_CRITERIA = [
+    {"id": "award_aa",     "type": "award", "label": "Consensus All-American", "kicker": "Honors"},
+    {"id": "award_aa1",    "type": "award", "label": "1st-Team All-American",  "kicker": "Honors"},
+    {"id": "award_wooden", "type": "award", "label": "Wooden Award",           "kicker": "Honors"},
+]
+AWARD_MIN_PER_CELL = {"award_aa": 2, "award_aa1": 2, "award_wooden": 1}
+# Awards belong in EASY too — they're recognizable and the marquee rows are
+# exactly the All-American-rich schools, so the columns actually qualify there.
+EASY_AWARD_IDS = {"award_aa", "award_aa1", "award_wooden"}
 
 # ----- SCHOOL PALETTES ---------------------------------------------------
 
@@ -349,6 +365,9 @@ def _draft_floor(c, min_per_cell):
     if c["type"] == "draft":
         f = DRAFT_MIN_PER_CELL.get(c["id"])
         return min_per_cell if f is None else f
+    if c["type"] == "award":
+        f = AWARD_MIN_PER_CELL.get(c["id"])
+        return min_per_cell if f is None else f
     return min_per_cell
 
 def _weighted_pick(items, weights, rand):
@@ -359,21 +378,26 @@ def _weighted_pick(items, weights, rand):
             return it
     return items[-1]
 
-def _draft_weights(drafts):
-    return [TOP5_WEIGHT if c["id"] == "draft_top5" else 1.0 for c in drafts]
+def _special_weight(c):
+    # keep the marquee-rare tiers (Top 5, Wooden) from dominating their own group
+    return 0.25 if c["id"] in ("draft_top5", "award_wooden") else 1.0
 
-def _pick_third(rest_stats, drafts, fillers, rand):
-    """The 3rd 'variety' column: usually a stat, sometimes a draft tier (Top 5 kept
-    rare), occasionally position/Senior. Falls back across categories if empty."""
+def _pick_third(rest_stats, drafts, awards, fillers, rand):
+    """The 3rd 'variety' column: usually a stat, sometimes a draft or award tier
+    (Top 5 / Wooden kept rare), occasionally position/Senior. Falls back if empty."""
+    pick = lambda grp: _weighted_pick(grp, [_special_weight(c) for c in grp], rand)
     roll = rand()
     if drafts and roll < DRAFT_SLOT_PROB:
-        return _weighted_pick(drafts, _draft_weights(drafts), rand)
-    if fillers and roll < DRAFT_SLOT_PROB + FILLER_SLOT_PROB:
+        return pick(drafts)
+    if awards and roll < DRAFT_SLOT_PROB + AWARD_SLOT_PROB:
+        return pick(awards)
+    if fillers and roll < DRAFT_SLOT_PROB + AWARD_SLOT_PROB + FILLER_SLOT_PROB:
         return shuffled(fillers, rand)[0]
     if rest_stats:
         return shuffled(rest_stats, rand)[0]
-    if drafts:
-        return _weighted_pick(drafts, _draft_weights(drafts), rand)
+    for grp in (drafts, awards):          # fallbacks if no third stat is available
+        if grp:
+            return pick(grp)
     if fillers:
         return shuffled(fillers, rand)[0]
     return None
@@ -405,12 +429,13 @@ def pick_grid(row_pool, row_membership, by_criterion, rand, min_per_cell,
             return all(len(rs & by_criterion[c["id"]]) >= f for rs in row_slugs)
         stats   = [c for c in cols_pool if c["type"] == "stat"            and usable(c)]
         drafts  = [c for c in cols_pool if c["type"] == "draft"           and usable(c)]
+        awards  = [c for c in cols_pool if c["type"] == "award"           and usable(c)]
         fillers = [c for c in cols_pool if c["type"] in ("pos", "class")  and usable(c)]
         if len(stats) < 2:                       # need two stats for slots 1-2
             continue
         two_stats  = shuffled(stats, rand)[:2]
         rest_stats = [c for c in stats if c not in two_stats]
-        third = _pick_third(rest_stats, drafts, fillers, rand)
+        third = _pick_third(rest_stats, drafts, awards, fillers, rand)
         if third is None:
             continue
         return rows, two_stats + [third]
@@ -604,6 +629,7 @@ def main():
     by_criterion = {c["id"]: set() for c in CRITERIA}
     players      = {}                          # slug → aggregated record
     seasons_seen = set()
+    name_school_season_slug = {}               # (pnorm name, canonical, season) → slug  (award matching)
 
     with open(PLAYER_CSV, encoding="utf-8") as f:
         for row in csv.DictReader(f):
@@ -629,6 +655,7 @@ def main():
                 p["latest_team"] = canonical
 
             by_school.setdefault(sid, set()).add(slug)
+            name_school_season_slug[(_pnorm(row["Player"]), canonical, season)] = slug
             conf = season_school_conf.get((season, canonical))   # year-accurate
             if conf:
                 by_conference.setdefault(conf, set()).add(slug)
@@ -691,6 +718,32 @@ def main():
     by_criterion["draft_1st"]   = {s for s, pk in draft_pick.items() if pk <= 30}
     by_criterion["draft_2nd"]   = {s for s, pk in draft_pick.items() if 31 <= pk <= 60}
 
+    # --- Awards: Consensus All-American (name+school+season → slug, season-accurate
+    #     so Brandon Roy ≠ his son) + Wooden (poy_winners.csv carries the slug). ---
+    def resolve_award_slug(name, school, season):
+        cs = resolve_school(school)
+        slug = name_school_season_slug.get((_pnorm(name), cs, season))
+        if slug:
+            return slug
+        cand = [s for s in namemap.get(_pnorm(name), []) if cs and cs in players[s]["teams"]]
+        return cand[0] if len(cand) == 1 else None
+    aa, aa1 = set(), set()
+    for r in _load_csv(AWARDS_AA):
+        slug = resolve_award_slug(r["Player"], r["School"], (r.get("Season") or "").strip())
+        if slug:
+            aa.add(slug)
+            if (r.get("Team") or "").strip().startswith("1st"):
+                aa1.add(slug)
+    by_criterion["award_aa"]  = aa
+    by_criterion["award_aa1"] = aa1
+    poy_rows  = _load_csv(AWARDS_POY)
+    slug_col  = list(poy_rows[0].keys())[-1] if poy_rows else None          # slug is the last column
+    by_criterion["award_wooden"] = {
+        (r.get(slug_col) or "").strip() for r in poy_rows
+        if (r.get("Award") or "").strip() == "Wooden Award" and (r.get(slug_col) or "").strip() in players
+    }
+    print(f"awards: All-American {len(aa)} (1st-team {len(aa1)}), Wooden {len(by_criterion['award_wooden'])}")
+
     # --- Row objects: schools + conferences (either can be a puzzle row) ------
     school_rows = [{"id": s["id"], "type": "school", "label": s["canonical_name"],
                     "kicker": "Played For", "bg": s["bg"], "accent": s["accent"], "fg": s["fg"]}
@@ -743,9 +796,10 @@ def main():
     # Column pools: Easy = recallable stats only (no draft). Medium/Rothstein add
     # the draft tags. Conferences are ROWS, never columns (so no degenerate cell).
     all_criteria  = [c for c in CRITERIA
-                     if c["type"] != "school" and c["id"] not in EXCLUDED_CRITERIA_IDS] + DRAFT_CRITERIA
+                     if c["type"] != "school" and c["id"] not in EXCLUDED_CRITERIA_IDS] + DRAFT_CRITERIA + AWARD_CRITERIA
     easy_criteria = [c for c in CRITERIA if c["id"] in EASY_CRITERIA_IDS] \
-                  + [d for d in DRAFT_CRITERIA if d["id"] in EASY_DRAFT_IDS]
+                  + [d for d in DRAFT_CRITERIA if d["id"] in EASY_DRAFT_IDS] \
+                  + [a for a in AWARD_CRITERIA if a["id"] in EASY_AWARD_IDS]
 
     mode_specs = [
         ("easy",   easy_rows,   EASY_MIN_PER_CELL,   easy_criteria),

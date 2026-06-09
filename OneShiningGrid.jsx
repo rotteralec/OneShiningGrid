@@ -160,7 +160,7 @@ export default function OneShiningGrid() {
   const filteredPlayers = useMemo(() => {
     if (!searchIndex.length) return [];
     const q = normName(query);
-    if (!q) return searchIndex.slice(0, 50).map(e => e.p);
+    if (!q) return [];                     // empty box → show a prompt, not the alphabetical A-names
     const scored = [];
     for (const e of searchIndex) {
       const idx = e.n.indexOf(q);
@@ -372,7 +372,7 @@ export default function OneShiningGrid() {
           <div className="max-h-64 overflow-auto mt-3">
             {orderedPlayers.length === 0 ? (
               <div className="p-4 text-center text-slate-500 italic text-sm">
-                No players found.
+                {normName(query) ? "No players found." : "Type a player name to search…"}
               </div>
             ) : orderedPlayers.map(p => {
               const used = usedSlugs.has(p.slug);   // already on the board → bottom, greyed

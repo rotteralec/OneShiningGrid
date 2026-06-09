@@ -170,6 +170,13 @@ export default function OneShiningGrid() {
     return scored.slice(0, 50).map(x => x.p);
   }, [query, searchIndex]);
 
+  // Each player may fill only ONE cell per board (right or wrong) — collect the
+  // slugs already placed so the picker can disable them.
+  const usedSlugs = useMemo(
+    () => new Set(cells.filter(Boolean).map(c => c.slug)),
+    [cells]
+  );
+
   function shareString() {
     let g = "";
     for (let r = 0; r < 3; r++) {
@@ -355,10 +362,13 @@ export default function OneShiningGrid() {
                 No players found.
               </div>
             ) : filteredPlayers.map(p => {
+              const used = usedSlugs.has(p.slug);   // already placed on the board
               return (
                 <button
                   key={p.slug}
+                  disabled={used}
                   onClick={() => {
+                    if (used) return;               // a player can only be used once per board
                     // Server-precomputed yes/no: is this slug in the valid set for the active cell?
                     const validSet = active.valid_per_cell[activeIdx] || [];
                     const correct = validSet.includes(p.slug);
@@ -367,12 +377,14 @@ export default function OneShiningGrid() {
                       rarity: correct ? Math.floor(8 + Math.random() * 70) : 0,
                     });
                   }}
-                  className="w-full flex justify-between items-center text-left px-3 py-2 border-b border-dashed border-slate-300 hover:bg-amber-100">
+                  className={`w-full flex justify-between items-center text-left px-3 py-2 border-b border-dashed border-slate-300 ${
+                    used ? "opacity-40 cursor-not-allowed" : "hover:bg-amber-100"
+                  }`}>
                   <div>
                     <div className="font-serif font-bold text-base">{p.name}</div>
                     <div className="text-[11px] tracking-widest text-slate-500">{p.season}</div>
                   </div>
-                  <div className="text-[11px] tracking-widest text-slate-500">PICK ▸</div>
+                  <div className="text-[11px] tracking-widest text-slate-500">{used ? "USED" : "PICK ▸"}</div>
                 </button>
               );
             })}

@@ -65,6 +65,29 @@ const normName = (s) =>
 // Per-day, per-mode persistence: a refresh keeps your picks and you can't retry.
 // It's localStorage, so it's per-browser — a new device or incognito starts fresh.
 const GAME_NS = "osg:v1";
+
+// Day numbering must mirror build_game_data.py: EPOCH = 2026-01-01, day 1.
+// Uses the viewer's LOCAL calendar date (like the build uses the build
+// machine's local date); mapping the local Y/M/D through Date.UTC makes the
+// arithmetic immune to DST-length days.
+function dayNumberFor(d) {
+  const utc = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  return Math.round((utc - Date.UTC(2026, 0, 1)) / 86400000) + 1;
+}
+
+// daily_grid.json may be a single day (legacy: {day,date,modes,meta}) or a
+// horizon ({...first day, grids:[{day,date,modes},...]}). Pick today's entry;
+// if today is past the end of the horizon, fall back to the latest one (the
+// site keeps working, just stops rotating until the next build is pushed).
+function pickDailyGrid(g, todayDay) {
+  if (!g || !Array.isArray(g.grids) || g.grids.length === 0) return g;
+  const exact = g.grids.find(e => e.day === todayDay);
+  const past  = g.grids.filter(e => e.day <= todayDay);
+  const pick  = exact || (past.length ? past[past.length - 1] : g.grids[0]);
+  if (!exact) console.info(`OSG: no grid for day ${todayDay}; showing day ${pick.day} (horizon ${g.grids[0].day}..${g.grids[g.grids.length - 1].day})`);
+  return { day: pick.day, date: pick.date, modes: pick.modes, meta: g.meta };
+}
+
 function loadGame(key) {
   try { const s = window.localStorage.getItem(key); return s ? JSON.parse(s) : null; }
   catch { return null; }
@@ -101,7 +124,7 @@ export default function OneShiningGrid() {
       fetch("/player_index.json").then(r => { if (!r.ok) throw new Error(`player_index: HTTP ${r.status}`); return r.json(); }),
       fetch(gridUrl).then(r => { if (!r.ok) throw new Error(`${gridUrl}: HTTP ${r.status}`); return r.json(); }),
     ])
-      .then(([idx, g]) => { if (!cancelled) { setPlayerIndex(idx); setGrid(g); } })
+      .then(([idx, g]) => { if (!cancelled) { setPlayerIndex(idx); setGrid(isTest ? g : pickDailyGrid(g, dayNumberFor(new Date()))); } })
       .catch(err => { if (!cancelled) setLoadError(err.message); });
     return () => { cancelled = true; };
   }, [isTest]);

@@ -771,6 +771,15 @@ def main():
             today = dt.date.fromisoformat(sys.argv[di + 1])
     day = day_number_for(today)
 
+    # --days N: generate a horizon of N consecutive days (default 1) into the
+    # same daily_grid.json. The frontend picks the entry matching the viewer's
+    # local date, so the static site rotates daily with no server-side steps.
+    days_ahead = 1
+    if "--days" in sys.argv:
+        ni = sys.argv.index("--days")
+        if ni + 1 < len(sys.argv) and sys.argv[ni + 1].isdigit():
+            days_ahead = max(1, min(int(sys.argv[ni + 1]), 366))
+
     marquee_set = set(MARQUEE_SCHOOLS)
     medium_set  = set(MARQUEE_SCHOOLS) | set(MEDIUM_SCHOOLS)
 
@@ -807,36 +816,58 @@ def main():
         ("hard",   hard_rows,   HARD_MIN_PER_CELL,   all_criteria),
     ]
     history = load_history()
-    row_age, col_age = recent_ages(history, day)     # per-mode {id: days-since-last-used}
-    modes = {}
-    for i, (name, pool, mn, crits) in enumerate(mode_specs):
-        rand = mulberry32((day * 2654435761 + i * 40503) & 0xFFFFFFFF)
-        modes[name] = build_mode(pool, row_membership, by_criterion, rand, mn, crits, school_conferences,
-                                 row_age.get(name, {}), col_age.get(name, {}),
-                                 ROW_WINDOW[name], COL_WINDOW[name], MAX_CONF_PER_GRID[name])
+    # Regenerate the horizon fresh: drop history entries for the days being
+    # rebuilt (day onward) so re-running never double-counts them; entries for
+    # PAST days are kept so cooldown windows still respect what actually ran.
+    history["entries"] = [e for e in history.get("entries", []) if e.get("day", 0) < day]
 
+    grids = []
+    for offset in range(days_ahead):
+        d_date = today + dt.timedelta(days=offset)
+        d_day  = day_number_for(d_date)
+        row_age, col_age = recent_ages(history, d_day)   # per-mode {id: days-since-last-used}
+        d_modes = {}
+        for i, (name, pool, mn, crits) in enumerate(mode_specs):
+            rand = mulberry32((d_day * 2654435761 + i * 40503) & 0xFFFFFFFF)
+            d_modes[name] = build_mode(pool, row_membership, by_criterion, rand, mn, crits, school_conferences,
+                                       row_age.get(name, {}), col_age.get(name, {}),
+                                       ROW_WINDOW[name], COL_WINDOW[name], MAX_CONF_PER_GRID[name])
+        grids.append({"day": d_day, "date": d_date.isoformat(), "modes": d_modes})
+        record_history(history, d_day, d_date, d_modes)  # cooldowns apply across the horizon
+
+    modes = grids[0]["modes"]                            # first day (summary + --test below)
+
+    meta = {
+        "min_games_for_average": MIN_GAMES_FOR_AVERAGE,
+        "min_fga_for_pct":       MIN_FGA_FOR_PCT,
+        "min_3pa_for_pct":       MIN_3PA_FOR_PCT,
+        "min_fta_for_pct":       MIN_FTA_FOR_PCT,
+    }
+    # Backward-compatible shape: top-level day/date/modes = the FIRST day (any
+    # old reader keeps working); "grids" carries the whole horizon for the
+    # frontend's date-based selection.
     daily = {
-        "day":   day,
-        "date":  today.isoformat(),
-        "modes": modes,
-        "meta": {
-            "min_games_for_average": MIN_GAMES_FOR_AVERAGE,
-            "min_fga_for_pct":       MIN_FGA_FOR_PCT,
-            "min_3pa_for_pct":       MIN_3PA_FOR_PCT,
-            "min_fta_for_pct":       MIN_FTA_FOR_PCT,
-        },
+        "day":       day,
+        "date":      today.isoformat(),
+        "modes":     modes,
+        "meta":      meta,
+        "generated": dt.date.today().isoformat(),
+        "grids":     grids,
     }
     (PUBLIC_DIR / "daily_grid.json").write_text(
         json.dumps(daily, ensure_ascii=False, indent=1),
         encoding="utf-8",
     )
-    record_history(history, day, today, modes)       # remember today's schools/criteria
 
     # ----- SUMMARY ----------------------------------------------------
     idx_size = (PUBLIC_DIR / "player_index.json").stat().st_size
     grd_size = (PUBLIC_DIR / "daily_grid.json").stat().st_size
     print(f"Wrote public/player_index.json — {len(index_records)} players, {idx_size/1024:.1f} KB")
-    print(f"Wrote public/daily_grid.json   — day {day} ({today.isoformat()}), {grd_size/1024:.1f} KB")
+    if days_ahead == 1:
+        print(f"Wrote public/daily_grid.json   — day {day} ({today.isoformat()}), {grd_size/1024:.1f} KB")
+    else:
+        print(f"Wrote public/daily_grid.json   — days {day}..{grids[-1]['day']} "
+              f"({today.isoformat()} → {grids[-1]['date']}), {len(grids)} grids, {grd_size/1024:.1f} KB")
     for name in ("easy", "medium", "hard"):
         m = modes[name]
         target = f"target >={m['min_per_cell']}/cell"

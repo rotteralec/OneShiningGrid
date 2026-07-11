@@ -255,7 +255,7 @@ export default function OneShiningGrid() {
     }
     const md = grid.modes[mode];
     const pz = Array.isArray(md) ? ` · Puzzle ${Math.min(puzzleIdx, md.length - 1) + 1}` : "";
-    return `One Shining Grid #${grid.day} · ${MODE_LABELS[mode].toUpperCase()}${pz}\n${correctCount}/9 · Rarity ${totalRarity}\n${g}cbb-grid.example`;
+    return `One Shining Grid #${grid.day} · ${MODE_LABELS[mode].toUpperCase()}${pz}\n${correctCount}/9\n${g}oneshininggrid.com`;
   }
 
   async function copyShare() {
@@ -398,7 +398,7 @@ export default function OneShiningGrid() {
         {/* SCORE STRIP */}
         <div className="grid grid-cols-3 gap-2 mt-4">
           <Stat label="Filled" value={`${correctCount}/9`} />
-          <Stat label="Rarity" value={cells.some(c => c) ? totalRarity : "—"} />
+          <Stat label="Rarity" value="Soon" />
           <Stat label="Streak" value={"—"} />
         </div>
 

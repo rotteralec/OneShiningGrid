@@ -58,7 +58,7 @@ const MODE_LABELS = { easy: "Easy", medium: "Medium", hard: "Rothstein" };
 
 // Accent-insensitive, lowercase key for search (é→e, č→c, ü→u, …).
 const normName = (s) =>
-  (s || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  (s || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[.']/g, "").trim();
 
 // ----- COMPONENT ----------------------------------------------------------
 
@@ -198,7 +198,12 @@ export default function OneShiningGrid() {
     return playerIndex.players.map(p => {
       const n = normName(p.name);
       const parts = n.split(/\s+/);
-      return { p, n, first: parts[0] || "", last: parts[parts.length - 1] || "", parts };
+      // "last" skips generational suffixes so "Ace Baldwin Jr" indexes as
+      // last="baldwin" — bare "jr" then finds actual J.R. players, and
+      // surname searches aren't diluted by thousands of suffix matches.
+      const core = parts.filter(t => !["jr", "sr", "ii", "iii", "iv"].includes(t));
+      const last = core.length ? core[core.length - 1] : (parts[parts.length - 1] || "");
+      return { p, n, first: parts[0] || "", last, parts };
     });
   }, [playerIndex]);
 

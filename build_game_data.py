@@ -38,7 +38,7 @@ PUBLIC_DIR = ROOT / "public"
 CONF_CSV            = ROOT / "cbb_conferences_1999-2026" / "1999-2026-conferences.csv"
 CONF_SCHOOL_ALIAS   = ROOT / "conference_school_aliases.csv"
 CONF_LABELS_CSV     = ROOT / "conference_labels.csv"
-DRAFT_CSV           = ROOT / "nba_draft_2000-2025" / "2000-2025-ALL.csv"
+DRAFT_CSV           = ROOT / "nba_draft_2000-2026" / "2000-2026-ALL.csv"
 DRAFT_COLLEGE_ALIAS = ROOT / "draft_college_aliases.csv"
 DRAFT_PLAYER_ALIAS  = ROOT / "draft_player_aliases.csv"
 

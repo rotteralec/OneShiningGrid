@@ -266,13 +266,59 @@ def main():
     else:
         notes += 1
         print(f"  NOTE: {len(multi_canon)} canonical_name(s) appear on multiple rows.")
-        print(f"  This is allowed and expected for name changes. Verify each is intentional:")
+        print(f"  Allowed for name changes; CHECK 10 fails any whose names co-occur in a season:")
         for canon in sorted(multi_canon.keys()):
             rs = multi_canon[canon]
             sources = [(r['team_file_name'], r['player_file_name']) for r in rs]
             print(f"    {canon!r} x{len(rs)}:")
             for tfn, pfn in sources:
                 print(f"      team={tfn!r}  player={pfn!r}")
+    print()
+
+    # ----- CHECK 10: canonical collisions — distinct schools merged ------
+    # A repeated canonical is legitimate ONLY for a rename: the old and new
+    # source names are ONE school, so they never appear in the same season.
+    # If two source strings under one canonical DO co-occur in a season, they
+    # are two DIFFERENT schools wrongly merged (e.g. Southeast Missouri State
+    # folded into 'Missouri State'). CHECK 9 lists repeats but can't tell a
+    # rename from a collision — this check does, and fails the collisions.
+    #
+    # The test uses PLAYER-side seasons only. The team CSVs label every season
+    # with a school's CURRENT name (retroactive), so a team string would overlap
+    # its own pre-rename player string and raise false alarms. Player data keeps
+    # the historical name, so its season span is the reliable signal.
+    print("CHECK 10 — No canonical shared by schools that co-occur in a season")
+    player_years_by_string = defaultdict(set)
+    for yr, strings in player_strings_by_year.items():
+        for s in strings:
+            player_years_by_string[s].add(yr)
+
+    def _season_label(y):
+        return f"{y}-{(y + 1) % 100:02d}"
+
+    collisions = []
+    for canon, rs in sorted(multi_canon.items()):
+        spans = [(r, player_years_by_string.get(r.get("player_file_name") or "", set()))
+                 for r in rs]
+        for i in range(len(spans)):
+            for j in range(i + 1, len(spans)):
+                (ri, yi), (rj, yj) = spans[i], spans[j]
+                shared = yi & yj
+                if shared:
+                    collisions.append((canon, ri.get("player_file_name"),
+                                       rj.get("player_file_name"), sorted(shared)))
+    if not collisions:
+        print(f"  PASS: every repeated canonical is a clean rename (no shared seasons)")
+    else:
+        issues += 1
+        bad_canons = sorted({c for c, *_ in collisions})
+        print(f"  FAIL: {len(bad_canons)} canonical(s) merge schools that share a season "
+              f"({len(collisions)} conflicting pair(s)):")
+        for canon, a, b, shared in collisions:
+            span = f"{_season_label(shared[0])}..{_season_label(shared[-1])}"
+            print(f"    canonical {canon!r}: {a!r} ↔ {b!r}")
+            print(f"      {len(shared)} shared season(s) {span} "
+                  f"→ give one its own canonical_name if they're different schools")
     print()
 
     # ----- SUMMARY -------------------------------------------------------

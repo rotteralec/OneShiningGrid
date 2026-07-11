@@ -30,15 +30,15 @@ import unicodedata
 from pathlib import Path
 
 ROOT       = Path(__file__).parent
-PLAYER_CSV = ROOT / "cbb_player_seasons_master.csv"   # all 27 seasons; one row per player-season
+PLAYER_CSV = ROOT / "cbb_player_seasons_master.csv"   # all seasons 1970-71+; one row per player-season
 ALIAS_CSV  = ROOT / "school_aliases.csv"
 PUBLIC_DIR = ROOT / "public"
 
 # Conference + NBA-draft inputs and their name-reconciliation maps (read-only).
-CONF_CSV            = ROOT / "cbb_conferences_1999-2026" / "1999-2026-conferences.csv"
+CONF_CSV            = ROOT / "cbb_conferences_master.csv"   # all seasons 1970-71+ (built in StatheadScraping)
 CONF_SCHOOL_ALIAS   = ROOT / "conference_school_aliases.csv"
 CONF_LABELS_CSV     = ROOT / "conference_labels.csv"
-DRAFT_CSV           = ROOT / "nba_draft_2000-2026" / "2000-2026-ALL.csv"
+DRAFT_CSV           = ROOT / "nba_draft_master.csv"          # all drafts 1971+ (built in StatheadScraping)
 DRAFT_COLLEGE_ALIAS = ROOT / "draft_college_aliases.csv"
 DRAFT_PLAYER_ALIAS  = ROOT / "draft_player_aliases.csv"
 

@@ -1,0 +1,356 @@
+{
+ "meta": {
+  "placeholder": true,
+  "league": "w",
+  "player_count": 57,
+  "school_count": 9,
+  "seasons": [
+   "1978-79",
+   "2025-26"
+  ]
+ },
+ "players": [
+  {
+   "slug": "aja-wilson-1",
+   "name": "A'ja Wilson",
+   "team": "South Carolina",
+   "season": "2014-18"
+  },
+  {
+   "slug": "aliyah-boston-1",
+   "name": "Aliyah Boston",
+   "team": "South Carolina",
+   "season": "2019-23"
+  },
+  {
+   "slug": "angel-reese-1",
+   "name": "Angel Reese",
+   "team": "LSU",
+   "season": "2020-24"
+  },
+  {
+   "slug": "arike-ogunbowale-1",
+   "name": "Arike Ogunbowale",
+   "team": "Notre Dame",
+   "season": "2015-19"
+  },
+  {
+   "slug": "azzi-fudd-1",
+   "name": "Azzi Fudd",
+   "team": "UConn",
+   "season": "2021-25"
+  },
+  {
+   "slug": "breanna-stewart-1",
+   "name": "Breanna Stewart",
+   "team": "UConn",
+   "season": "2012-16"
+  },
+  {
+   "slug": "bridgette-gordon-1",
+   "name": "Bridgette Gordon",
+   "team": "Tennessee",
+   "season": "1985-89"
+  },
+  {
+   "slug": "brittney-griner-1",
+   "name": "Brittney Griner",
+   "team": "Baylor",
+   "season": "2009-13"
+  },
+  {
+   "slug": "caitlin-clark-1",
+   "name": "Caitlin Clark",
+   "team": "Iowa",
+   "season": "2020-24"
+  },
+  {
+   "slug": "candace-parker-1",
+   "name": "Candace Parker",
+   "team": "Tennessee",
+   "season": "2005-08"
+  },
+  {
+   "slug": "candice-wiggins-1",
+   "name": "Candice Wiggins",
+   "team": "Stanford",
+   "season": "2004-08"
+  },
+  {
+   "slug": "chamique-holdsclaw-1",
+   "name": "Chamique Holdsclaw",
+   "team": "Tennessee",
+   "season": "1995-99"
+  },
+  {
+   "slug": "cheryl-miller-1",
+   "name": "Cheryl Miller",
+   "team": "USC",
+   "season": "1982-86"
+  },
+  {
+   "slug": "chiney-ogwumike-1",
+   "name": "Chiney Ogwumike",
+   "team": "Stanford",
+   "season": "2010-14"
+  },
+  {
+   "slug": "cynthia-cooper-1",
+   "name": "Cynthia Cooper",
+   "team": "USC",
+   "season": "1982-86"
+  },
+  {
+   "slug": "diamond-deshields-1",
+   "name": "Diamond DeShields",
+   "team": "Tennessee",
+   "season": "2013-18"
+  },
+  {
+   "slug": "diana-taurasi-1",
+   "name": "Diana Taurasi",
+   "team": "UConn",
+   "season": "2000-04"
+  },
+  {
+   "slug": "flaujae-johnson-1",
+   "name": "Flau'jae Johnson",
+   "team": "LSU",
+   "season": "2022-26"
+  },
+  {
+   "slug": "haley-jones-1",
+   "name": "Haley Jones",
+   "team": "Stanford",
+   "season": "2019-23"
+  },
+  {
+   "slug": "jackie-young-1",
+   "name": "Jackie Young",
+   "team": "Notre Dame",
+   "season": "2016-19"
+  },
+  {
+   "slug": "jennifer-azzi-1",
+   "name": "Jennifer Azzi",
+   "team": "Stanford",
+   "season": "1986-90"
+  },
+  {
+   "slug": "jewell-loyd-1",
+   "name": "Jewell Loyd",
+   "team": "Notre Dame",
+   "season": "2012-15"
+  },
+  {
+   "slug": "juju-watkins-1",
+   "name": "JuJu Watkins",
+   "team": "USC",
+   "season": "2023-26"
+  },
+  {
+   "slug": "kaleena-mosqueda-lewis-1",
+   "name": "Kaleena Mosqueda-Lewis",
+   "team": "UConn",
+   "season": "2011-15"
+  },
+  {
+   "slug": "kamilla-cardoso-1",
+   "name": "Kamilla Cardoso",
+   "team": "South Carolina",
+   "season": "2020-24"
+  },
+  {
+   "slug": "kara-lawson-1",
+   "name": "Kara Lawson",
+   "team": "Tennessee",
+   "season": "1999-03"
+  },
+  {
+   "slug": "kate-starbird-1",
+   "name": "Kate Starbird",
+   "team": "Stanford",
+   "season": "1993-97"
+  },
+  {
+   "slug": "kathleen-doyle-1",
+   "name": "Kathleen Doyle",
+   "team": "Iowa",
+   "season": "2016-20"
+  },
+  {
+   "slug": "lisa-leslie-1",
+   "name": "Lisa Leslie",
+   "team": "USC",
+   "season": "1990-94"
+  },
+  {
+   "slug": "maya-moore-1",
+   "name": "Maya Moore",
+   "team": "UConn",
+   "season": "2007-11"
+  },
+  {
+   "slug": "megan-gustafson-1",
+   "name": "Megan Gustafson",
+   "team": "Iowa",
+   "season": "2015-19"
+  },
+  {
+   "slug": "monika-czinano-1",
+   "name": "Monika Czinano",
+   "team": "Iowa",
+   "season": "2018-23"
+  },
+  {
+   "slug": "moriah-jefferson-1",
+   "name": "Moriah Jefferson",
+   "team": "UConn",
+   "season": "2012-16"
+  },
+  {
+   "slug": "nalyssa-smith-1",
+   "name": "NaLyssa Smith",
+   "team": "Baylor",
+   "season": "2018-22"
+  },
+  {
+   "slug": "napheesa-collier-1",
+   "name": "Napheesa Collier",
+   "team": "UConn",
+   "season": "2015-19"
+  },
+  {
+   "slug": "natalie-achonwa-1",
+   "name": "Natalie Achonwa",
+   "team": "Notre Dame",
+   "season": "2010-14"
+  },
+  {
+   "slug": "nina-davis-1",
+   "name": "Nina Davis",
+   "team": "Baylor",
+   "season": "2013-17"
+  },
+  {
+   "slug": "nneka-ogwumike-1",
+   "name": "Nneka Ogwumike",
+   "team": "Stanford",
+   "season": "2008-12"
+  },
+  {
+   "slug": "odyssey-sims-1",
+   "name": "Odyssey Sims",
+   "team": "Baylor",
+   "season": "2010-14"
+  },
+  {
+   "slug": "paige-bueckers-1",
+   "name": "Paige Bueckers",
+   "team": "UConn",
+   "season": "2020-25"
+  },
+  {
+   "slug": "rebecca-lobo-1",
+   "name": "Rebecca Lobo",
+   "team": "UConn",
+   "season": "1991-95"
+  },
+  {
+   "slug": "rickea-jackson-1",
+   "name": "Rickea Jackson",
+   "team": "Tennessee",
+   "season": "2019-24"
+  },
+  {
+   "slug": "ruth-riley-1",
+   "name": "Ruth Riley",
+   "team": "Notre Dame",
+   "season": "1997-01"
+  },
+  {
+   "slug": "samantha-logic-1",
+   "name": "Samantha Logic",
+   "team": "Iowa",
+   "season": "2011-15"
+  },
+  {
+   "slug": "seimone-augustus-1",
+   "name": "Seimone Augustus",
+   "team": "LSU",
+   "season": "2002-06"
+  },
+  {
+   "slug": "sheila-foster-1",
+   "name": "Sheila Foster",
+   "team": "South Carolina",
+   "season": "1978-82"
+  },
+  {
+   "slug": "skylar-diggins-1",
+   "name": "Skylar Diggins",
+   "team": "Notre Dame",
+   "season": "2009-13"
+  },
+  {
+   "slug": "sophia-young-1",
+   "name": "Sophia Young",
+   "team": "Baylor",
+   "season": "2002-06"
+  },
+  {
+   "slug": "sue-bird-1",
+   "name": "Sue Bird",
+   "team": "UConn",
+   "season": "1998-02"
+  },
+  {
+   "slug": "sylvia-fowles-1",
+   "name": "Sylvia Fowles",
+   "team": "LSU",
+   "season": "2004-08"
+  },
+  {
+   "slug": "tamika-catchings-1",
+   "name": "Tamika Catchings",
+   "team": "Tennessee",
+   "season": "1997-01"
+  },
+  {
+   "slug": "temeka-johnson-1",
+   "name": "Temeka Johnson",
+   "team": "LSU",
+   "season": "2001-05"
+  },
+  {
+   "slug": "tiffany-mitchell-1",
+   "name": "Tiffany Mitchell",
+   "team": "South Carolina",
+   "season": "2012-16"
+  },
+  {
+   "slug": "tina-charles-1",
+   "name": "Tina Charles",
+   "team": "UConn",
+   "season": "2006-10"
+  },
+  {
+   "slug": "tina-thompson-1",
+   "name": "Tina Thompson",
+   "team": "USC",
+   "season": "1993-97"
+  },
+  {
+   "slug": "ty-harris-1",
+   "name": "Ty Harris",
+   "team": "South Carolina",
+   "season": "2016-20"
+  },
+  {
+   "slug": "zia-cooke-1",
+   "name": "Zia Cooke",
+   "team": "South Carolina",
+   "season": "2019-23"
+  }
+ ]
+}

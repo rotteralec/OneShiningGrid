@@ -9,6 +9,13 @@ import { useState, useMemo, useEffect, useRef } from "react";
    The frontend NEVER sees raw stats. Validation is just "is this
    player's slug in the valid set for the active cell?" — yes/no.
    Schools live on the row axis only (until we have multiple seasons).
+
+   LEAGUES: one static bundle serves both the men's and women's games.
+   The league only changes WHICH json files get fetched, the storage
+   namespace, and some trim (accent color, kicker, share tag). The URL
+   carries it as ?w (a query param, so static hosting never notices) —
+   the toggle rewrites the address bar via history.replaceState, so a
+   copied link opens straight into the same league.
 --------------------------------------------------------------- */
 
 // ----- ICONS -------------------------------------------------------------
@@ -56,6 +63,35 @@ function iconFor(crit) {
 // Display names per mode (internal keys stay easy/medium/hard).
 const MODE_LABELS = { easy: "Easy", medium: "Medium", hard: "Rothstein" };
 
+// ----- LEAGUES ------------------------------------------------------------
+// Adding a league = adding an entry here + shipping its three JSON files.
+// `ns` is the localStorage namespace: men's keeps the pre-league key
+// verbatim so already-played boards survive this update.
+// `theme` feeds CSS variables (--osg-*) set on the root div; the women's
+// game trades the amber-brown accents for a garnet/rose ink.
+const LEAGUES = {
+  m: {
+    key: "m",
+    toggle: "MEN'S",
+    kicker: "A Daily College Hoops Puzzle",
+    title: "One Shining Grid",
+    shareTag: "",
+    ns: "osg:v1",
+    files: { index: "/player_index.json", daily: "/daily_grid.json", test: "/test_grids.json" },
+    theme: { sh: "#92400e", accent: "#92400e", dot: "#b45309", stripeA: "#b45309", stripeB: "#7c2d12" },
+  },
+  w: {
+    key: "w",
+    toggle: "WOMEN'S",
+    kicker: "A Daily Women's College Hoops Puzzle",
+    title: "One Shining Grid — Women's",
+    shareTag: " · WOMEN'S",
+    ns: "osg:v1:w",
+    files: { index: "/player_index_w.json", daily: "/daily_grid_w.json", test: "/test_grids_w.json" },
+    theme: { sh: "#9d174d", accent: "#9d174d", dot: "#be185d", stripeA: "#be185d", stripeB: "#500724" },
+  },
+};
+
 // Accent-insensitive, lowercase key for search (é→e, č→c, ü→u, …).
 const normName = (s) =>
   (s || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[.']/g, "").trim();
@@ -64,7 +100,8 @@ const normName = (s) =>
 
 // Per-day, per-mode persistence: a refresh keeps your picks and you can't retry.
 // It's localStorage, so it's per-browser — a new device or incognito starts fresh.
-const GAME_NS = "osg:v1";
+// The namespace itself lives on the league (LEAGUES[x].ns) so the two games
+// never share saved boards.
 
 // Day numbering must mirror build_game_data.py: EPOCH = 2026-01-01, day 1.
 // Uses the viewer's LOCAL calendar date (like the build uses the build
@@ -102,10 +139,32 @@ export default function OneShiningGrid() {
   // pinned by the day number baked into daily_grid.json at build time.
   const today = new Date();
 
+  // ----- LEAGUE -------------------------------------------------------
+  // ?w in the URL = women's game. Read once on mount; the toggle then keeps
+  // state and address bar in sync via history.replaceState (no reload, no
+  // server round-trip — it's a query param, invisible to static hosting).
+  const [league, setLeague] = useState(() =>
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).has("w") ? "w" : "m"
+  );
+  const L = LEAGUES[league];
+
+  function switchLeague(lg) {
+    if (lg === league) return;
+    setLeague(lg);
+    setPuzzleIdx(0);
+    const sp = new URLSearchParams(window.location.search);
+    if (lg === "w") sp.set("w", ""); else sp.delete("w");
+    // URLSearchParams renders a bare flag as "w=" — trim the dangling "=".
+    const qs = sp.toString().replace(/=(?=&|$)/g, "");
+    window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : ""));
+  }
+
+  useEffect(() => { document.title = L.title; }, [L.title]);
+
   // ----- DATA LOAD ----------------------------------------------------
-  // Two small fetches on mount. player_index drives the search picker;
-  // daily_grid is the puzzle itself, refreshed daily by re-running
-  // build_game_data.py server-side.
+  // Two small fetches on mount (and again on league switch). player_index
+  // drives the search picker; daily_grid is the puzzle itself, refreshed
+  // daily by re-running build_game_data.py server-side.
   const [playerIndex, setPlayerIndex] = useState(null);
   const [grid, setGrid] = useState(null);
   const [loadError, setLoadError] = useState(null);
@@ -119,19 +178,28 @@ export default function OneShiningGrid() {
 
   useEffect(() => {
     let cancelled = false;
-    const gridUrl = isTest ? "/test_grids.json" : "/daily_grid.json";
+    // Drop the other league's data immediately so nothing stale renders
+    // while the new fetches are in flight.
+    setPlayerIndex(null); setGrid(null); setLoadError(null);
+    const files = LEAGUES[league].files;
+    const gridUrl = isTest ? files.test : files.daily;
     Promise.all([
-      fetch("/player_index.json").then(r => { if (!r.ok) throw new Error(`player_index: HTTP ${r.status}`); return r.json(); }),
+      fetch(files.index).then(r => { if (!r.ok) throw new Error(`${files.index}: HTTP ${r.status}`); return r.json(); }),
       fetch(gridUrl).then(r => { if (!r.ok) throw new Error(`${gridUrl}: HTTP ${r.status}`); return r.json(); }),
     ])
       .then(([idx, g]) => { if (!cancelled) { setPlayerIndex(idx); setGrid(isTest ? g : pickDailyGrid(g, dayNumberFor(new Date()))); } })
       .catch(err => { if (!cancelled) setLoadError(err.message); });
     return () => { cancelled = true; };
-  }, [isTest]);
+  }, [isTest, league]);
 
   // ----- GAME STATE ---------------------------------------------------
-  const [cells, setCells] = useState(Array(9).fill(null));
-  const [guessesLeft, setGuessesLeft] = useState(9);
+  // The board carries the storage key it belongs to. Keeping {key, cells,
+  // guesses} in ONE state object means the persist effect can never pair a
+  // stale board with a new key — which mattered the moment the league toggle
+  // made keys change while old cells were still in state (a naive version
+  // leaked one league's picks into the other's save).
+  const [board, setBoard] = useState({ key: null, cells: Array(9).fill(null), guessesLeft: 9 });
+  const { cells, guessesLeft } = board;
   const [activeIdx, setActiveIdx] = useState(null);
   const [showShare, setShowShare] = useState(false);
   const [showHow, setShowHow] = useState(false);
@@ -144,8 +212,9 @@ export default function OneShiningGrid() {
   const correctCount = cells.filter(c => c && c.correct).length;
   const totalRarity = cells.reduce((s, c) => s + (c && c.correct ? c.rarity : 0), 0);
   const gameOver = guessesLeft <= 0 || cells.every(c => c);
-  // localStorage key for this board (null in ?test or before data loads → no persistence).
-  const gameKey = !isTest && grid ? `${GAME_NS}:${grid.day}:${mode}` : null;
+  // localStorage key for this board (null in ?test or before data loads → no
+  // persistence). League-namespaced: men's and women's boards never collide.
+  const gameKey = !isTest && grid ? `${L.ns}:${grid.day}:${mode}` : null;
 
   useEffect(() => {
     if (activeIdx !== null) {
@@ -154,34 +223,37 @@ export default function OneShiningGrid() {
     }
   }, [activeIdx]);
 
-  // On mode/puzzle/day change: restore this board from localStorage if it was
-  // already played (refresh keeps picks, no retry); otherwise start fresh.
-  // ?test stays freely replayable because gameKey is null there.
+  // On mode/puzzle/day/league change: restore this board from localStorage if
+  // it was already played (refresh keeps picks, no retry); otherwise start
+  // fresh. ?test stays freely replayable because gameKey is null there.
   useEffect(() => {
     setActiveIdx(null);
     setShowShare(false);
     const saved = gameKey ? loadGame(gameKey) : null;
     if (saved && Array.isArray(saved.cells) && saved.cells.length === 9) {
-      setCells(saved.cells);
-      setGuessesLeft(typeof saved.guessesLeft === "number" ? saved.guessesLeft : 9);
+      setBoard({
+        key: gameKey,
+        cells: saved.cells,
+        guessesLeft: typeof saved.guessesLeft === "number" ? saved.guessesLeft : 9,
+      });
     } else {
-      setCells(Array(9).fill(null));
-      setGuessesLeft(9);
+      setBoard({ key: gameKey, cells: Array(9).fill(null), guessesLeft: 9 });
     }
   }, [mode, puzzleIdx, gameKey]);
 
   // Persist the board on every change (daily only; ?test isn't saved).
+  // Only when the board's own key matches the current one — a board mid-swap
+  // (league/mode just changed, restore not committed yet) is never written.
   useEffect(() => {
-    if (gameKey) saveGame(gameKey, { cells, guessesLeft });
-  }, [cells, guessesLeft, gameKey]);
+    if (gameKey && board.key === gameKey) saveGame(gameKey, { cells, guessesLeft });
+  }, [board, gameKey]);
 
   function submit(pick) {
-    setCells(prev => {
-      const next = [...prev];
+    setBoard(prev => {
+      const next = [...prev.cells];
       next[activeIdx] = pick;
-      return next;
+      return { ...prev, cells: next, guessesLeft: prev.guessesLeft - 1 };
     });
-    setGuessesLeft(g => g - 1);
     setActiveIdx(null);
   }
 
@@ -255,7 +327,7 @@ export default function OneShiningGrid() {
     }
     const md = grid.modes[mode];
     const pz = Array.isArray(md) ? ` · Puzzle ${Math.min(puzzleIdx, md.length - 1) + 1}` : "";
-    return `One Shining Grid #${grid.day} · ${MODE_LABELS[mode].toUpperCase()}${pz}\n${correctCount}/9\n${g}oneshininggrid.com`;
+    return `One Shining Grid #${grid.day}${L.shareTag} · ${MODE_LABELS[mode].toUpperCase()}${pz}\n${correctCount}/9\n${g}oneshininggrid.com${league === "w" ? "/?w" : ""}`;
   }
 
   async function copyShare() {
@@ -300,7 +372,10 @@ export default function OneShiningGrid() {
   // ---------- RENDER --------------------------------------------------
 
   return (
-    <div className="min-h-screen w-full bg-amber-50 text-slate-900 font-sans relative overflow-hidden">
+    <div
+      className="min-h-screen w-full bg-amber-50 text-slate-900 font-sans relative overflow-hidden"
+      style={{ "--osg-sh": L.theme.sh, "--osg-accent": L.theme.accent, "--osg-dot": L.theme.dot }}
+    >
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-100/40 via-transparent to-amber-200/40" />
 
       <div className="relative max-w-2xl mx-auto px-3 sm:px-5 py-8 pb-24">
@@ -308,12 +383,29 @@ export default function OneShiningGrid() {
         {/* MASTHEAD */}
         <header className="text-center border-y-4 border-double border-slate-900 py-4 mb-6">
           <div className="text-[11px] tracking-[0.32em] text-slate-600 font-semibold uppercase">
-            A Daily College Hoops Puzzle
+            {L.kicker}
           </div>
           <h1 className="font-serif font-black text-4xl sm:text-5xl my-1 leading-none">
             One Shining Grid
           </h1>
-          <div className="text-xs tracking-[0.25em] text-amber-800 mt-1">● ● ● ● ●</div>
+          <div className="text-xs tracking-[0.25em] mt-1" style={{ color: "var(--osg-accent)" }}>● ● ● ● ●</div>
+
+          {/* LEAGUE TOGGLE — flips data files + URL (?w), not the page */}
+          <div className="mt-3 inline-flex rounded-full border-2 border-slate-900 overflow-hidden shadow-[2px_2px_0_var(--osg-sh)]">
+            {["m", "w"].map((k) => (
+              <button
+                key={k}
+                onClick={() => switchLeague(k)}
+                aria-pressed={league === k}
+                className={`px-4 py-1 text-[11px] tracking-[0.18em] font-bold transition ${
+                  league === k
+                    ? "bg-slate-900 text-amber-50"
+                    : "bg-amber-100/70 text-slate-900 hover:bg-amber-200"
+                }`}>
+                {LEAGUES[k].toggle}
+              </button>
+            ))}
+          </div>
           <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-slate-600">
             <span>Edition <b className="text-slate-900">#{grid.day}</b></span>
             <span><b className="text-slate-900">{today.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</b></span>
@@ -329,13 +421,20 @@ export default function OneShiningGrid() {
               onClick={() => { setMode(m); setPuzzleIdx(0); }}
               className={`px-4 py-1.5 text-xs tracking-[0.18em] font-bold rounded border-2 border-slate-900 transition ${
                 mode === m
-                  ? "bg-slate-900 text-amber-50 shadow-[3px_3px_0_#92400e]"
+                  ? "bg-slate-900 text-amber-50 shadow-[3px_3px_0_var(--osg-sh)]"
                   : "bg-amber-100/70 text-slate-900 hover:bg-amber-200"
               }`}>
               {MODE_LABELS[m].toUpperCase()}
             </button>
           ))}
         </div>
+
+        {/* PLACEHOLDER NOTICE — shown while a league runs on sample data */}
+        {grid.meta?.placeholder && (
+          <div className="text-center text-[10px] tracking-[0.2em] font-bold mb-4" style={{ color: "var(--osg-accent)" }}>
+            ★ SAMPLE PUZZLE — THE FULL WOMEN'S DATABASE IS ON ITS WAY ★
+          </div>
+        )}
 
         {/* PUZZLE SELECTOR — only in ?test preview (modes hold an array of grids) */}
         {isMulti && (
@@ -347,7 +446,7 @@ export default function OneShiningGrid() {
                 onClick={() => setPuzzleIdx(k)}
                 className={`w-7 h-7 text-xs font-bold rounded border-2 border-slate-900 transition ${
                   k === safeIdx
-                    ? "bg-slate-900 text-amber-50 shadow-[2px_2px_0_#92400e]"
+                    ? "bg-slate-900 text-amber-50 shadow-[2px_2px_0_var(--osg-sh)]"
                     : "bg-amber-100/70 text-slate-900 hover:bg-amber-200"
                 }`}>
                 {k + 1}
@@ -363,7 +462,7 @@ export default function OneShiningGrid() {
             <span className="flex gap-1">
               {Array.from({ length: 9 }).map((_, i) => (
                 <span key={i}
-                  className={`w-2.5 h-2.5 rounded-full border border-slate-900 ${i < guessesLeft ? "bg-amber-700" : "bg-transparent"}`} />
+                  className={`w-2.5 h-2.5 rounded-full border border-slate-900 ${i < guessesLeft ? "bg-[var(--osg-dot)]" : "bg-transparent"}`} />
               ))}
             </span>
           </div>
@@ -373,7 +472,7 @@ export default function OneShiningGrid() {
               HOW TO PLAY
             </button>
             <button onClick={() => setShowShare(true)} disabled={!gameOver}
-              className="px-3 py-2 text-sm tracking-widest font-bold whitespace-nowrap bg-slate-900 text-amber-50 rounded border-2 border-slate-900 shadow-[3px_3px_0_#92400e] hover:-translate-x-px hover:-translate-y-px transition disabled:opacity-40 disabled:cursor-not-allowed">
+              className="px-3 py-2 text-sm tracking-widest font-bold whitespace-nowrap bg-slate-900 text-amber-50 rounded border-2 border-slate-900 shadow-[3px_3px_0_var(--osg-sh)] hover:-translate-x-px hover:-translate-y-px transition disabled:opacity-40 disabled:cursor-not-allowed">
               SHARE
             </button>
           </div>
@@ -382,7 +481,7 @@ export default function OneShiningGrid() {
         {/* GRID */}
         <div className="bg-amber-100/60 border-2 border-slate-900 rounded-md p-2 sm:p-3 shadow-[6px_6px_0_#0f172a] relative">
           <div className="absolute -left-0.5 -right-0.5 -top-0.5 h-2 rounded-t-md"
-            style={{ backgroundImage: "repeating-linear-gradient(90deg,#b45309 0 18px,#7c2d12 18px 20px)" }} />
+            style={{ backgroundImage: `repeating-linear-gradient(90deg,${L.theme.stripeA} 0 18px,${L.theme.stripeB} 18px 20px)` }} />
           <div className="grid gap-1.5 mt-1"
             style={{ gridTemplateColumns: "84px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)", gridTemplateRows: "84px 1fr 1fr 1fr" }}>
             <div className="flex items-center justify-center text-xs italic font-serif text-slate-500 text-center">
@@ -467,7 +566,7 @@ export default function OneShiningGrid() {
           <pre className="bg-amber-50 border-2 border-slate-900 rounded p-3 text-sm text-center whitespace-pre font-mono leading-relaxed">{shareString()}</pre>
           <div className="flex gap-2 mt-4">
             <button onClick={copyShare}
-              className="flex-1 px-3 py-2 text-sm tracking-widest font-bold bg-slate-900 text-amber-50 rounded border-2 border-slate-900 shadow-[3px_3px_0_#92400e]">
+              className="flex-1 px-3 py-2 text-sm tracking-widest font-bold bg-slate-900 text-amber-50 rounded border-2 border-slate-900 shadow-[3px_3px_0_var(--osg-sh)]">
               COPY RESULT
             </button>
             <button onClick={() => setShowShare(false)}
@@ -496,7 +595,7 @@ export default function OneShiningGrid() {
 
       {/* TOAST */}
       {toast && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-amber-50 px-5 py-2.5 rounded tracking-widest font-bold shadow-[3px_3px_0_#92400e] z-50">
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-amber-50 px-5 py-2.5 rounded tracking-widest font-bold shadow-[3px_3px_0_var(--osg-sh)] z-50">
           {toast}
         </div>
       )}

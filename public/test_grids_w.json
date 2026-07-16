@@ -1,0 +1,318 @@
+{
+ "test": true,
+ "day": 197,
+ "date": "2026-07-16",
+ "count": 1,
+ "modes": {
+  "easy": [
+   {
+    "rows": [
+     {
+      "id": "school_uconn",
+      "type": "school",
+      "label": "UConn",
+      "kicker": "Played For",
+      "bg": "#000E2F",
+      "accent": "#E4002B",
+      "fg": "#f5ecd7"
+     },
+     {
+      "id": "school_tennessee",
+      "type": "school",
+      "label": "Tennessee",
+      "kicker": "Played For",
+      "bg": "#FF8200",
+      "accent": "#FFFFFF",
+      "fg": "#1a1f3a"
+     },
+     {
+      "id": "school_south_carolina",
+      "type": "school",
+      "label": "South Carolina",
+      "kicker": "Played For",
+      "bg": "#73000A",
+      "accent": "#000000",
+      "fg": "#f5ecd7"
+     }
+    ],
+    "cols": [
+     {
+      "id": "w20ppg",
+      "type": "stat",
+      "label": "Avg 20+ PPG",
+      "kicker": "Per-Game"
+     },
+     {
+      "id": "wdraft",
+      "type": "draft",
+      "label": "WNBA Draft Pick",
+      "kicker": "Pro Career"
+     },
+     {
+      "id": "wpos_g",
+      "type": "pos",
+      "label": "Guard",
+      "kicker": "Position"
+     }
+    ],
+    "valid_per_cell": [
+     [
+      "breanna-stewart-1",
+      "maya-moore-1",
+      "napheesa-collier-1",
+      "paige-bueckers-1"
+     ],
+     [
+      "azzi-fudd-1",
+      "breanna-stewart-1",
+      "diana-taurasi-1",
+      "kaleena-mosqueda-lewis-1",
+      "maya-moore-1",
+      "moriah-jefferson-1",
+      "napheesa-collier-1",
+      "paige-bueckers-1",
+      "rebecca-lobo-1",
+      "sue-bird-1",
+      "tina-charles-1"
+     ],
+     [
+      "azzi-fudd-1",
+      "diana-taurasi-1",
+      "kaleena-mosqueda-lewis-1",
+      "moriah-jefferson-1",
+      "paige-bueckers-1",
+      "sue-bird-1"
+     ],
+     [
+      "bridgette-gordon-1",
+      "candace-parker-1",
+      "chamique-holdsclaw-1",
+      "rickea-jackson-1"
+     ],
+     [
+      "bridgette-gordon-1",
+      "candace-parker-1",
+      "chamique-holdsclaw-1",
+      "diamond-deshields-1",
+      "kara-lawson-1",
+      "rickea-jackson-1",
+      "tamika-catchings-1"
+     ],
+     [
+      "diamond-deshields-1",
+      "kara-lawson-1"
+     ],
+     [
+      "aja-wilson-1",
+      "sheila-foster-1"
+     ],
+     [
+      "aja-wilson-1",
+      "aliyah-boston-1",
+      "kamilla-cardoso-1",
+      "tiffany-mitchell-1",
+      "ty-harris-1",
+      "zia-cooke-1"
+     ],
+     [
+      "tiffany-mitchell-1",
+      "ty-harris-1",
+      "zia-cooke-1"
+     ]
+    ],
+    "min_per_cell": 1,
+    "achieved_min": 2
+   }
+  ],
+  "medium": [
+   {
+    "rows": [
+     {
+      "id": "school_iowa",
+      "type": "school",
+      "label": "Iowa",
+      "kicker": "Played For",
+      "bg": "#000000",
+      "accent": "#FFCD00",
+      "fg": "#f5ecd7"
+     },
+     {
+      "id": "school_lsu",
+      "type": "school",
+      "label": "LSU",
+      "kicker": "Played For",
+      "bg": "#461D7C",
+      "accent": "#FDD023",
+      "fg": "#f5ecd7"
+     },
+     {
+      "id": "school_stanford",
+      "type": "school",
+      "label": "Stanford",
+      "kicker": "Played For",
+      "bg": "#8C1515",
+      "accent": "#FFFFFF",
+      "fg": "#f5ecd7"
+     }
+    ],
+    "cols": [
+     {
+      "id": "w10rpg",
+      "type": "stat",
+      "label": "Avg 10+ RPG",
+      "kicker": "Per-Game"
+     },
+     {
+      "id": "w5apg",
+      "type": "stat",
+      "label": "Avg 5+ APG",
+      "kicker": "Per-Game"
+     },
+     {
+      "id": "w20ppg",
+      "type": "stat",
+      "label": "Avg 20+ PPG",
+      "kicker": "Per-Game"
+     }
+    ],
+    "valid_per_cell": [
+     [
+      "megan-gustafson-1"
+     ],
+     [
+      "caitlin-clark-1",
+      "kathleen-doyle-1",
+      "samantha-logic-1"
+     ],
+     [
+      "caitlin-clark-1",
+      "megan-gustafson-1"
+     ],
+     [
+      "angel-reese-1",
+      "sylvia-fowles-1"
+     ],
+     [
+      "temeka-johnson-1"
+     ],
+     [
+      "angel-reese-1",
+      "seimone-augustus-1"
+     ],
+     [
+      "chiney-ogwumike-1",
+      "nneka-ogwumike-1"
+     ],
+     [
+      "jennifer-azzi-1"
+     ],
+     [
+      "candice-wiggins-1",
+      "chiney-ogwumike-1",
+      "kate-starbird-1",
+      "nneka-ogwumike-1"
+     ]
+    ],
+    "min_per_cell": 1,
+    "achieved_min": 1
+   }
+  ],
+  "hard": [
+   {
+    "rows": [
+     {
+      "id": "school_notre_dame",
+      "type": "school",
+      "label": "Notre Dame",
+      "kicker": "Played For",
+      "bg": "#0C2340",
+      "accent": "#C99700",
+      "fg": "#f5ecd7"
+     },
+     {
+      "id": "school_usc",
+      "type": "school",
+      "label": "USC",
+      "kicker": "Played For",
+      "bg": "#990000",
+      "accent": "#FFCC00",
+      "fg": "#f5ecd7"
+     },
+     {
+      "id": "school_baylor",
+      "type": "school",
+      "label": "Baylor",
+      "kicker": "Played For",
+      "bg": "#154734",
+      "accent": "#FFB81C",
+      "fg": "#f5ecd7"
+     }
+    ],
+    "cols": [
+     {
+      "id": "wdraft_no1",
+      "type": "draft",
+      "label": "WNBA #1 Overall",
+      "kicker": "Pro Career"
+     },
+     {
+      "id": "w10rpg",
+      "type": "stat",
+      "label": "Avg 10+ RPG",
+      "kicker": "Per-Game"
+     },
+     {
+      "id": "w5apg",
+      "type": "stat",
+      "label": "Avg 5+ APG",
+      "kicker": "Per-Game"
+     }
+    ],
+    "valid_per_cell": [
+     [
+      "jackie-young-1",
+      "jewell-loyd-1"
+     ],
+     [
+      "ruth-riley-1"
+     ],
+     [
+      "skylar-diggins-1"
+     ],
+     [
+      "tina-thompson-1"
+     ],
+     [
+      "cheryl-miller-1",
+      "lisa-leslie-1",
+      "tina-thompson-1"
+     ],
+     [
+      "cynthia-cooper-1"
+     ],
+     [
+      "brittney-griner-1"
+     ],
+     [
+      "nalyssa-smith-1",
+      "nina-davis-1",
+      "sophia-young-1"
+     ],
+     [
+      "odyssey-sims-1"
+     ]
+    ],
+    "min_per_cell": 1,
+    "achieved_min": 1
+   }
+  ]
+ },
+ "meta": {
+  "placeholder": true,
+  "league": "w",
+  "min_games_for_average": 15,
+  "min_fga_for_pct": 200,
+  "min_3pa_for_pct": 100,
+  "min_fta_for_pct": 50
+ }
+}

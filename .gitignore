@@ -42,3 +42,5 @@ school_color_preview.html
 conference_color_preview.html
 _stat_preview.html
 /nba_draft_2000-2026
+*.md
+!README.md
